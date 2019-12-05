@@ -349,6 +349,10 @@ zone_configure_buildzone() {
 	  info attr name=mi-zpath 2>/dev/null | \
 	  awk -F: '{if ($1~/value/) print $2}'));
 
+	mv /${mi_bzone_tplate}/root/etc/resolv.conf{,.orig} 2> /dev/null || true;
+	cp -p ${mi_bzone_oldpath}/root/etc/resolv.conf \
+	  /${mi_bzone_tplate}/root/etc/resolv.conf 2> /dev/null || true;
+
 	mv /${mi_bzone_tplate}/root/etc/defaultrouter{,.orig} 2> /dev/null || true;
 	cp -p ${mi_bzone_oldpath}/root/etc/defaultrouter \
 	  /${mi_bzone_tplate}/root/etc/defaultrouter 2> /dev/null || true;
