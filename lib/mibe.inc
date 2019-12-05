@@ -227,6 +227,7 @@ get_vars() {
 	mi_bzonet=$(echo ${mi_bzone:0:18});
         mi_bfinal_dump="${mi_home}/images/${mi_imagebd}/${mi_imagenn}-${mi_imagenv}.zfs.gz";
 	mi_bfinal_manifest="${mi_home}/images/${mi_imagebd}/${mi_imagenn}-${mi_imagenv}.json";
+	mi_bfinal_manifest_dsapi="${mi_home}/images/${mi_imagebd}/${mi_imagenn}-${mi_imagenv}-dsapi.json";
 	mi_bfinal_snap="zones/${name}@final";
 #	mi_bimage_snap="zones/${base}@${name}";
 	mi_bimage_snap="zones/${mi_bimage}@${name}";
@@ -408,13 +409,12 @@ zone_boot() {
 	done
 }
 zone_create_motdproduct() {
-        if [[ -f "/${mi_brepo_path}/motd" ]]; then
+    if [[ -f "/${mi_brepo_path}/motd" ]]; then
 		printf "%-60s" "* Creating image motd and product file..";
                 sed -e "s!%brand%!${brand}!g" \
                     -e "s!%name%!${mi_imagenn}!g" \
                     -e "s!%version%!${mi_imagenv}!g" \
                     -e "s!%homepage%!${homepage}!g" /${mi_brepo_path}/motd > /${mi_bzone_tplate}/root/etc/motd
-		echo "sed finished";
 		cat > /${mi_bzone_tplate}/root/etc/product <<-EOF
 		Name: ${organization} ${brand}
 		Image: ${mi_imagenn} ${mi_imagenv}
@@ -422,7 +422,6 @@ zone_create_motdproduct() {
 		Documentation: ${homepage}
 		Description: ${description}
 		EOF
-		echo "cat finished";
 	else
 		printf "%-60s" "* Creating image product file..";
 
@@ -433,7 +432,7 @@ zone_create_motdproduct() {
 		Documentation: ${homepage}
 		Description: ${description}
 		EOF
-        fi
+    fi
 
 	printf "OK.\n";
 }
@@ -580,11 +579,15 @@ zone_create_dumpmanifest() {
   fi
 
   # Set manifest owner_uuid to 9dce1460-0c4c-4417-ab8b-25ca478c5a78 if not set in manifest
-  [[ -z ${owneruuid} ]] && mi_manifest_owneruuid="00000000-0000-0000-0000-000000000000";
+  #[[ -z ${owneruuid} ]] && mi_manifest_owneruuid="00000000-0000-0000-0000-000000000000";
+  mi_manifest_owneruuid="${owneruuid}";
+  mi_manifest_ownername="${ownername}";
+
 
   # Get file details
   mi_file_time=$(ls -l --time-style '+%Y-%m-%dT%H:%M:%SZ' ${mi_bfinal_dump} | awk '{ print $6 }');
   mi_file_hash=$(digest -a sha1 ${mi_bfinal_dump});
+  mi_file_md5=$(digest -a md5 ${mi_bfinal_dump});
   mi_file_size=$(ls -l ${mi_bfinal_dump} | awk '{ print $5 }');
   mi_manifest_uuid=$(uuid);
 
@@ -604,6 +607,7 @@ sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest}
   "files": [
     { 
       "sha1": "${mi_file_hash}",
+	  "md5": "${mi_file_md5}",
       "size": ${mi_file_size},
       "compression": "gzip"
     }
@@ -620,7 +624,43 @@ sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest}
   ${mi_manifest_users_block}
   ${mi_manifest_role_block}
   ${mi_manifest_billingtags_block}
-  "urn": "sdc:sdc:${mi_imagenn}:${mi_imagenv}"
+  "urn": "${urn_cloud_name}:${urn_creator_name}:${mi_imagenn}:${mi_imagenv}"
+}
+EOF
+
+sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest_dsapi}
+{
+  "uuid": "${mi_manifest_uuid}",
+  "name": "${mi_imagenn}",
+  "version": "${mi_imagenv}",
+  "description": "${description}",
+  "os": "smartos",
+  "type": "zone-dataset",
+  "vendor_uuid": "${mi_manifest_owneruuid}",
+  "creator_uuid": "${mi_manifest_owneruuid}",
+  "creator_name": "${mi_manifest_ownername}",
+  "published_at": "${mi_file_time}",
+  "state": "active",
+  "public": true,
+  "disabled": false,
+  "files": [
+    {
+      "path": "${mi_imagenn}-${mi_imagenv}.zfs.${mi_bfinal_dump_ext}",
+      "sha1": "${mi_file_hash}",
+	  "md5": "${mi_file_md5}",
+      "size": ${mi_file_size},
+	  "compression": "gzip"
+    }
+  ],
+  ${mi_manifest_homepage_block}
+  "requirements": {
+    ${mi_manifest_minram_block}
+    ${mi_manifest_networks_block}
+  },
+  ${mi_manifest_users_block}
+  ${mi_manifest_role_block}
+  ${mi_manifest_billingtags_block}
+  "urn": "${urn_cloud_name}:${urn_creator_name}:${mi_imagenn}:${mi_imagenv}"
 }
 EOF
 	printf "OK.\n\n";
