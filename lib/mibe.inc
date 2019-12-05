@@ -408,7 +408,7 @@ zone_create_motdproduct() {
                     -e "s!%name%!${mi_imagenn}!g" \
                     -e "s!%version%!${mi_imagenv}!g" \
                     -e "s!%homepage%!${homepage}!g" /${mi_brepo_path}/motd > /${mi_bzone_tplate}/root/etc/motd
-
+		echo "sed finished";
 		cat > /${mi_bzone_tplate}/root/etc/product <<-EOF
 		Name: ${organization} ${brand}
 		Image: ${mi_imagenn} ${mi_imagenv}
@@ -416,6 +416,7 @@ zone_create_motdproduct() {
 		Documentation: ${homepage}
 		Description: ${description}
 		EOF
+		echo "cat finished";
 	else
 		printf "%-60s" "* Creating image product file..";
 
@@ -432,7 +433,7 @@ zone_create_motdproduct() {
 }
 zone_install_packages() {
 	# First run pkgin update
-	mi_bzone_result=$(zlogin ${mi_bzone} 'PATH=/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin \			
+	mi_bzone_result=$(zlogin ${mi_bzone} 'PATH=/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin \
             /usr/bin/touch /opt/local/.dlj_license_accepted; /opt/local/bin/pkgin -f -y up' >> ${mi_bzone_logall} \
             | tee -a ${mi_bzone_logall} >> ${mi_bzone_logerr} || echo $?);
 
