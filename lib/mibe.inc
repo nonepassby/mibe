@@ -475,6 +475,7 @@ zone_exec_customize() {
 
 		# remove /.zonecontrol/meatadata.sock for readonly filesystem
 		cat /${mi_bzone_tplate}/root/opt/local/bin/sm-prepare-image
+		echo "replace metadata.sock"
 		sed -i '/metadata\.sock/d' /${mi_bzone_tplate}/root/opt/local/bin/sm-prepare-image
 
 		mi_bzone_result=$(zlogin ${mi_bzone} 'bash -v /root/customize 2>&1' >> ${mi_bzone_logall} \
