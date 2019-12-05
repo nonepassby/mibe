@@ -82,7 +82,7 @@ zone_create_dumpmanifest;
 zone_delete_vm;
 
 printf "Image:    ${mi_bfinal_dump}\n";
-printf "Manifest: ${mi_bfinal_manifest}\n\n";
+printf "Manifest: ${mi_bfinal_manifest}\n";
 printf "Manifest_dsapi: ${mi_bfinal_manifest_dsapi}\n\n";
 
 exit 0;
