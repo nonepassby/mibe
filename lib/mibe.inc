@@ -473,10 +473,8 @@ zone_exec_customize() {
 		cp /${mi_brepo_path}/customize /${mi_bzone_tplate}/root/root
 		chmod +x /${mi_bzone_tplate}/root/root/customize
 
-		# remove /.zonecontrol/meatadata.sock for readonly filesystem
-		cat /${mi_bzone_tplate}/root/opt/local/bin/sm-prepare-image
-		echo "replace metadata.sock"
-		sed -i '/metadata\.sock/d' /${mi_bzone_tplate}/root/opt/local/bin/sm-prepare-image
+		# remove /.zonecontrol/meatadata.sock for readonly filesystem		
+		gsed -i '/metadata\.sock/d' /${mi_bzone_tplate}/root/opt/local/bin/sm-prepare-image
 
 		mi_bzone_result=$(zlogin ${mi_bzone} 'bash -v /root/customize 2>&1' >> ${mi_bzone_logall} \
 		  | tee -a ${mi_bzone_logall} >> ${mi_bzone_logerr} || echo $?);
