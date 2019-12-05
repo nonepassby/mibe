@@ -591,7 +591,12 @@ zone_create_dumpmanifest() {
   mi_file_hash=$(digest -a sha1 ${mi_bfinal_dump});
   mi_file_md5=$(digest -a md5 ${mi_bfinal_dump});
   mi_file_size=$(ls -l ${mi_bfinal_dump} | awk '{ print $5 }');
-  mi_manifest_uuid=$(uuid);
+  #mi_manifest_uuid=$(uuid);
+  if [ "${manifest_uuid}" == "" ]; then
+  	mi_manifest_uuid=$(uuid);
+  else
+	mi_manifest_uuid=${manifest_uuid};
+  fi
 
 sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest}
 {
