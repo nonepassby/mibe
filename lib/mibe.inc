@@ -381,6 +381,11 @@ zone_copyin_files() {
 		done
 		printf "OK.\n";
 	fi
+	if [ "${pkgin_src}" != "" ]; then
+		echo "set pkgin source: ${pkgin_src}";
+		gsed -i "s|^http.*|${pkgin_src}|" /${mi_bzone_tplate}/root/opt/local/etc/pkgin/repositories.conf;
+	fi
+	
 	IFS=${OLDIFS};
 }
 zone_boot() {
@@ -427,17 +432,8 @@ zone_create_motdproduct() {
 }
 zone_install_packages() {
 	# First run pkgin update
-	if [ "${pkgin_src}" == "" ]; then
-		exec_cmd='PATH=/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin \			
-            /usr/bin/touch /opt/local/.dlj_license_accepted; /opt/local/bin/pkgin -f -y up'
-	else
-		exec_cmd='PATH=/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin \
-			gsed -i "s|^http.*|${pkgin_src}|" /opt/local/etc/pkgin/repositories.conf \
-            /usr/bin/touch /opt/local/.dlj_license_accepted; /opt/local/bin/pkgin -f -y up'
-	fi
-	echo "${exec_cmd}"
-
-	mi_bzone_result=$(zlogin ${mi_bzone} ${exec_cmd} >> ${mi_bzone_logall} \
+	mi_bzone_result=$(zlogin ${mi_bzone} 'PATH=/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin \			
+            /usr/bin/touch /opt/local/.dlj_license_accepted; /opt/local/bin/pkgin -f -y up' >> ${mi_bzone_logall} \
             | tee -a ${mi_bzone_logall} >> ${mi_bzone_logerr} || echo $?);
 
 	[[ ! ${mi_bzone_result} ]] || failtest "Unable to update pkgin list.";
