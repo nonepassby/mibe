@@ -97,8 +97,10 @@ populate_smartos() {
 
 	# Ensure we have updated standard packages
 	echo "* Updating standard packages.";
-	pkg_delete -v nodejs smtools zoneinit
-	pkg_add -v nodejs smtools zoneinit
+	#pkg_delete -v nodejs smtools zoneinit
+	#pkg_add -v nodejs smtools zoneinit
+	pkgin -y remove nodejs smtools zoneinit
+	pkgin -y in nodejs smtools zoneinit
 	npm install smartdc -g
 	npm install jsontool -g
 	npm install manta -g
@@ -453,10 +455,10 @@ zone_install_packages() {
 			printf "%-60s" "* Installing packages list..";
 
 			echo "pkg_add -v ${mi_bzone_packages[@]}" >> ${mi_bzone_logall}
-
+			# pkg_add -v ${mi_bzone_packages[@]} 2>&1 >> ${mi_bzone_logall} \
 			mi_bzone_result=$(zlogin ${mi_bzone} \
 			  PATH=/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin \
-			  pkg_add -v ${mi_bzone_packages[@]} 2>&1 >> ${mi_bzone_logall} \
+			  pkgin -y in ${mi_bzone_packages[@]} 2>&1 >> ${mi_bzone_logall} \
 			  | tee -a ${mi_bzone_logall} >> ${mi_bzone_logerr} || echo $?); 
 
 			[[ ! ${mi_bzone_result} ]] && printf "OK.\n" || failtest "There was an error installing the packages list.\n! See ${mi_bzone_logerr}.";
@@ -647,6 +649,8 @@ zone_unconfigure_buildzone() {
 	# Restore original network configuration to build zone mi_bzone
 #	mi_bzone_vnics=($(zonecfg -z ${mi_bzone} info net 2>/dev/null | \
 #	  awk '{if($1~/physical/) print $2}'));
+
+	rm /${mi_bzone_tplate}/root/etc/resolv.conf* 2>/dev/null || true;
 
 #	mv /${mi_bzone_tplate}/root/etc/defaultrouter{.orig,} 2>/dev/null || \
 #	rm /${mi_bzone_tplate}/root/etc/defaultrouter 2>/dev/null || true;
