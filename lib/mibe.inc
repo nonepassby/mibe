@@ -391,8 +391,9 @@ zone_copyin_files() {
 		printf "OK.\n";
 	fi
 	if [ "${pkgin_src}" != "" ]; then
-		echo "set pkgin source: ${pkgin_src}";
+		printf "%-60s" "* Set pkgin url: ${pkgin_src}..";		
 		gsed -i "s|^http.*|${pkgin_src}|" /${mi_bzone_tplate}/root/opt/local/etc/pkgin/repositories.conf;
+		printf "OK.\n";
 	fi
 	
 	IFS=${OLDIFS};
