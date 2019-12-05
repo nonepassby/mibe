@@ -3,7 +3,7 @@
   "autoboot": true,
   "brand": "joyent",
   "limit_priv": "default",  
-  "image_uuid": "b81bcc1e-f1c8-11e9-8876-03a841507d8c",  
+  "image_uuid": "@image_uuid@",  
   "max_physical_memory": 512,  
   "owner_uuid": "128f9130-15a5-11ea-9236-9f758037aae8",  
   "dns_domain": "itime",

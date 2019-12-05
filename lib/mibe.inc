@@ -226,11 +226,16 @@ get_vars() {
 	fi
 	mi_imagebn="${base%-*}";
 #	mi_imagebv="${base#*-}";
-	mi_imagebv="${base##*-}";	
+	mi_imagebv="${base##*-}";
 #	mi_imagebd="${mi_imagenv%.*}.0";
 	mi_time=$(date +%Y-%m-%d_%H-%M-%S);
 	mi_bzone=$(json -f ${mi_home}/etc/vm.json -aH uuid);
-	mi_bimage=$(json -f ${mi_home}/etc/vm.json -aH image_uuid);
+#	mi_bimage=$(json -f ${mi_home}/etc/vm.json -aH image_uuid);
+	mi_bimage=$(imgadm list -Ho uuid name=${mi_imagebn} version=${mi_imagebv})
+	if [ "${mi_bimage}" == "" ]; then
+		failtest "Base image ${base} doesn't exist.";
+	fi
+
 	mi_bzonet=$(echo ${mi_bzone:0:18});
         mi_bfinal_dump="${mi_images_path}/${mi_imagenn}-${mi_imagenv}.zfs.gz";
 	mi_bfinal_manifest="${mi_images_path}/${mi_imagenn}-${mi_imagenv}.json";
@@ -322,8 +327,11 @@ zone_configure_buildzone() {
 	printf "%-60s" "* Configuring build zone (${mi_bzonet})..";
 
 	# Create build the zone from vm.json
+	cp ${mi_home}/etc/vm.json ${mi_home}/etc/mibezone1.json;
+	gsed -i "s/@image_uuid@/${mi_bimage}/" ${mi_home}/etc/mibezone1.json;
 	#vmadm create -f ${mi_home}/etc/vm.json &> /dev/null || failtest "Unable to create build zone ${mi_bzone}";
-	vmadm create -f ${mi_home}/etc/vm.json || failtest "Unable to create build zone ${mi_bzone}";
+	vmadm create -f ${mi_home}/etc/mibezone1.json || failtest "Unable to create build zone ${mi_bzone}";
+	rm -f ${mi_home}/etc/mibezone1.json;
 
 	# Halt the build zone
 	zone_halt;
@@ -531,6 +539,9 @@ zone_cleanup_sighandler() {
 
 	# Check if mi_bimage_snap exists and remove it
         [[ $(zfs list -Ho name -t snapshot ${mi_bimage_snap} &> /dev/null)$? -eq 0 ]] && zfs destroy ${mi_bimage_snap} &> /dev/null
+
+	# Check if mibezone1.json exists and remove it
+	[[ -f "${mi_home}/etc/mibezone1.json" ]] && rm -f ${mi_home}/etc/mibezone1.json;
 
 	exit 1;
 }
