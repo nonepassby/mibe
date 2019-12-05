@@ -221,11 +221,13 @@ get_vars() {
 	mi_imagebd="${mi_imagenv%.*}.0";
 	mi_time=$(date +%Y-%m-%d_%H-%M-%S);
 	mi_bzone=$(json -f ${mi_home}/etc/vm.json -aH uuid);
+	mi_bimage=$(json -f ${mi_home}/etc/vm.json -aH image_uuid);
 	mi_bzonet=$(echo ${mi_bzone:0:18});
         mi_bfinal_dump="${mi_home}/images/${mi_imagebd}/${mi_imagenn}-${mi_imagenv}.zfs.gz";
 	mi_bfinal_manifest="${mi_home}/images/${mi_imagebd}/${mi_imagenn}-${mi_imagenv}.json";
 	mi_bfinal_snap="zones/${name}@final";
-	mi_bimage_snap="zones/${base}@${name}";
+#	mi_bimage_snap="zones/${base}@${name}";
+	mi_bimage_snap="zones/${mi_bimage}@${name}";
 	mi_bzone_tplate="zones/${name}";
 	mi_brepo_path="${mi_reposdir}/${mi_brepo}";
 	mi_bzone_logall="${mi_home}/logs/${name}-${mi_time}-all.log";
@@ -273,8 +275,9 @@ build_sanitycheck() {
 	# Check that final build image file doesn't already exist
 	[[ -f "${mi_bfinal_dump}" ]] && failtest "Build image ${mi_bfinal_dump} already exists\n! Nothing to do.";
 
-	# Check if base image exists zones/name-version
-	[[ $(zfs list -Ho name -t filesystem zones/${base} &> /dev/null)$? -ne 0 ]] && failtest "Base image zones/${base} doesn't exist.";
+	# Check if base image exists zones/name-version mi_bimage
+	#[[ $(zfs list -Ho name -t filesystem zones/${base} &> /dev/null)$? -ne 0 ]] && failtest "Base image zones/${base} doesn't exist.";
+	[[ $(zfs list -Ho name -t filesystem zones/${mi_bimage} &> /dev/null)$? -ne 0 ]] && failtest "Base image zones/${mi_bimage} doesn't exist.";
 
 	# Check if mi_bimage_snap exists
 	[[ $(zfs list -Ho name -t snapshot ${mi_bimage_snap} &> /dev/null)$? -eq 0 ]] && failtest "Base image snapshot ${mi_bimage_snap} already exists.";
