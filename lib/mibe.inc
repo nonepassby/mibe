@@ -200,6 +200,18 @@ init_repo() {
 
 	echo "* Done.";
 }
+get_defaults() {
+        [[ -f "${mi_home}/.mibecfg" ]] && source ${mi_home}/.mibecfg;
+        [[ -f "$HOME/.mibecfg" ]] && source ${HOME}/.mibecfg;
+
+        [[ -z "${owneruuid}" ]] && owneruuid="9dce1460-0c4c-4417-ab8b-25ca478c5a78";
+        [[ -z "${ownername}" ]] && ownername="sdc";
+        [[ -z "${compression}" ]] && compression="gzip";
+        [[ -z "${urn_cloud_name}" ]] && urn_cloud_name="sdc";
+        [[ -z "${urn_creator_name}" ]] && urn_creator_name="sdc";
+
+        true
+}
 get_vars() {
 	mi_imagenn="${name%-*}";
 	mi_imagenv="${name##*-}";
@@ -245,6 +257,9 @@ build_sanitycheck() {
 
 	# Check that build repository mi_brepo directory exists
 	[[ -d "${mi_brepo}" ]] || [[ -d "${mi_reposdir}/${mi_brepo}" ]] || failtest "Build repository ${mi_brepo} doesn\'t exist.";
+
+	# load .mibecfg defaults if available
+	get_defaults;
 
 	# Check that build repository manifest mi_brepo/manifest exists
 	[[ -f "${mi_brepo}/manifest" ]] && source ${mi_brepo}/manifest || { [[ -f "${mi_reposdir}/${mi_brepo}/manifest" ]] && source ${mi_reposdir}/${mi_brepo}/manifest || failtest "A build repository manifest ${mi_brepo}/manifest doesn't exist.\n! A build repository with proper build files must exist for an\n! image to be built.  See https://github.com:joyent/mi-example\n"; }
@@ -409,8 +424,17 @@ zone_create_motdproduct() {
 }
 zone_install_packages() {
 	# First run pkgin update
-	mi_bzone_result=$(zlogin ${mi_bzone} 'PATH=/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin \
-            /usr/bin/touch /opt/local/.dlj_license_accepted; /opt/local/bin/pkgin -f -y up' >> ${mi_bzone_logall} \
+	if [ "${pkgin_src}" == "" ]; then
+		exec_cmd='PATH=/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin \			
+            /usr/bin/touch /opt/local/.dlj_license_accepted; /opt/local/bin/pkgin -f -y up'
+	else
+		exec_cmd='PATH=/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin \
+			gsed -i "s|^http.*|${pkgin_src}|" /opt/local/etc/pkgin/repositories.conf \
+            /usr/bin/touch /opt/local/.dlj_license_accepted; /opt/local/bin/pkgin -f -y up'
+	fi
+	echo "${exec_cmd}"
+
+	mi_bzone_result=$(zlogin ${mi_bzone} ${exec_cmd} >> ${mi_bzone_logall} \
             | tee -a ${mi_bzone_logall} >> ${mi_bzone_logerr} || echo $?);
 
 	[[ ! ${mi_bzone_result} ]] || failtest "Unable to update pkgin list.";
@@ -442,6 +466,9 @@ zone_exec_customize() {
 
 		cp /${mi_brepo_path}/customize /${mi_bzone_tplate}/root/root
 		chmod +x /${mi_bzone_tplate}/root/root/customize
+
+		# remove /.zonecontrol/meatadata.sock for readonly filesystem
+		sed -i '' '/metadata\.sock/d' /${mi_bzone_tplate}/root/opt/local/bin/sm-prepare-image
 
 		mi_bzone_result=$(zlogin ${mi_bzone} 'bash -v /root/customize 2>&1' >> ${mi_bzone_logall} \
 		  | tee -a ${mi_bzone_logall} >> ${mi_bzone_logerr} || echo $?);

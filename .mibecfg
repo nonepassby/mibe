@@ -1,0 +1,8 @@
+owneruuid="128f9130-15a5-11ea-9236-9f758037aae8"
+ownername="itime"
+urn_cloud_name="smartos"
+urn_creator_name="itime"
+compression="gzip"
+provider="community"
+pkgin_src="http://pkgsrc.itime.biz/packages/2019Q3/x86_64/All"
+base="base-64-19.3.0"
