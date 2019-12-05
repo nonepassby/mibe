@@ -217,8 +217,13 @@ get_defaults() {
         true
 }
 get_vars() {
+	if [ "${version}" == "" ]; then
 	mi_imagenn="${name%-*}";
 	mi_imagenv="${name##*-}";
+	else
+	mi_imagenn="${name}";
+	mi_imagenv="${version}";
+	fi
 	mi_imagebn="${base%-*}";
 #	mi_imagebv="${base#*-}";
 	mi_imagebv="${base##*-}";	
@@ -230,13 +235,13 @@ get_vars() {
         mi_bfinal_dump="${mi_images_path}/${mi_imagenn}-${mi_imagenv}.zfs.gz";
 	mi_bfinal_manifest="${mi_images_path}/${mi_imagenn}-${mi_imagenv}.json";
 	mi_bfinal_manifest_dsapi="${mi_images_path}/${mi_imagenn}-${mi_imagenv}-dsapi.json";
-	mi_bfinal_snap="zones/${name}@final";
-#	mi_bimage_snap="zones/${base}@${name}";
-	mi_bimage_snap="zones/${mi_bimage}@${name}";
-	mi_bzone_tplate="zones/${name}";
+	mi_bfinal_snap="zones/${mi_imagenn}-${mi_imagenv}@final";
+#	mi_bimage_snap="zones/${base}@${mi_imagenn}-${mi_imagenv}";
+	mi_bimage_snap="zones/${mi_bimage}@${mi_imagenn}-${mi_imagenv}";
+	mi_bzone_tplate="zones/${mi_imagenn}-${mi_imagenv}";
 	mi_brepo_path="${mi_reposdir}/${mi_brepo}";
-	mi_bzone_logall="${mi_home}/logs/${name}-${mi_time}-all.log";
-	mi_bzone_logerr="${mi_home}/logs/${name}-${mi_time}-error.log";
+	mi_bzone_logall="${mi_home}/logs/${mi_imagenn}-${mi_imagenv}-${mi_time}-all.log";
+	mi_bzone_logerr="${mi_home}/logs/${mi_imagenn}-${mi_imagenv}-${mi_time}-error.log";
 }
 build_sanitycheck() {
 	printf "\n%-60s" "* Sanity checking build files and environment..";
