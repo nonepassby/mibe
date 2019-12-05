@@ -212,6 +212,8 @@ get_defaults() {
         [[ -z "${urn_cloud_name}" ]] && urn_cloud_name="sdc";
         [[ -z "${urn_creator_name}" ]] && urn_creator_name="sdc";
 
+		[[ -z "${mi_images_path}" ]] && mi_images_path="${mi_home}/images";
+
         true
 }
 get_vars() {
@@ -219,15 +221,15 @@ get_vars() {
 	mi_imagenv="${name##*-}";
 	mi_imagebn="${base%-*}";
 #	mi_imagebv="${base#*-}";
-	mi_imagebv="${base##*-}";
-	mi_imagebd="${mi_imagenv%.*}.0";
+	mi_imagebv="${base##*-}";	
+#	mi_imagebd="${mi_imagenv%.*}.0";
 	mi_time=$(date +%Y-%m-%d_%H-%M-%S);
 	mi_bzone=$(json -f ${mi_home}/etc/vm.json -aH uuid);
 	mi_bimage=$(json -f ${mi_home}/etc/vm.json -aH image_uuid);
 	mi_bzonet=$(echo ${mi_bzone:0:18});
-        mi_bfinal_dump="${mi_home}/images/${mi_imagebd}/${mi_imagenn}-${mi_imagenv}.zfs.gz";
-	mi_bfinal_manifest="${mi_home}/images/${mi_imagebd}/${mi_imagenn}-${mi_imagenv}.json";
-	mi_bfinal_manifest_dsapi="${mi_home}/images/${mi_imagebd}/${mi_imagenn}-${mi_imagenv}-dsapi.json";
+        mi_bfinal_dump="${mi_images_path}/${mi_imagenn}-${mi_imagenv}.zfs.gz";
+	mi_bfinal_manifest="${mi_images_path}/${mi_imagenn}-${mi_imagenv}.json";
+	mi_bfinal_manifest_dsapi="${mi_images_path}/${mi_imagenn}-${mi_imagenv}-dsapi.json";
 	mi_bfinal_snap="zones/${name}@final";
 #	mi_bimage_snap="zones/${base}@${name}";
 	mi_bimage_snap="zones/${mi_bimage}@${name}";
@@ -529,7 +531,7 @@ zone_cleanup_sighandler() {
 zone_create_dumpmanifest() {
 	printf "%-60s" "* Creating image file and manifest..";
 
-	[[ ! -d "${mi_home}/images/${mi_imagebd}" ]] && mkdir ${mi_home}/images/${mi_imagebd};
+	[[ ! -d "${mi_images_path}" ]] && mkdir ${mi_images_path};
 
 	zfs send ${mi_bzone_tplate}@final 2> /dev/null | gzip -9 > ${mi_bfinal_dump} || failtest "Unable to zfs dump ${mi_bfinal_dump}.";
 
