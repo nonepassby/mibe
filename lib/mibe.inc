@@ -714,7 +714,7 @@ zone_unconfigure_buildzone() {
 #	mi_bzone_vnics=($(zonecfg -z ${mi_bzone} info net 2>/dev/null | \
 #	  awk '{if($1~/physical/) print $2}'));
 
-	rm /${mi_bzone_tplate}/root/etc/resolv.conf* 2>/dev/null || true;
+	mv /${mi_bzone_tplate}/root/etc/resolv.conf{.orig,} 2>/dev/null || true;
 
 #	mv /${mi_bzone_tplate}/root/etc/defaultrouter{.orig,} 2>/dev/null || \
 #	rm /${mi_bzone_tplate}/root/etc/defaultrouter 2>/dev/null || true;
