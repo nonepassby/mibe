@@ -669,10 +669,10 @@ sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest_dsapi}
   "disabled": false,
   "files": [
     {
-      "path": "${mi_imagenn}-${mi_imagenv}.zfs.${mi_bfinal_dump_ext}",
-      "sha1": "${mi_file_hash}",
+	  "path": "${mi_imagenn}-${mi_imagenv}.zfs.gz",
+	  "sha1": "${mi_file_hash}",
 	  "md5": "${mi_file_md5}",
-      "size": ${mi_file_size},
+	  "size": ${mi_file_size},
 	  "compression": "gzip"
     }
   ],
