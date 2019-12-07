@@ -60,6 +60,7 @@ populate_smartos() {
 
 	# Build image to use for base of the image.  This image must
 	# already exist in the ZFS hierarchy.
+	# base-64-x.x.x or minimal-64-x.x.x
 	base="base-64-x.x.x"
 
 	# Organization name (implanted in motd and product)
@@ -82,6 +83,9 @@ populate_smartos() {
 
 	# Minimum amount of ram needed
 	minram=""
+
+	# new image uuid
+	manifest_uuid=""
 	EOF
 
 	# Create customize
