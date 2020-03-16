@@ -1,9 +1,9 @@
 #!/bin/bash
 #
 # build_smartos - Image builder for SmartOS images
-# https://github.com/joyent/mibe
+# https://git.joyent.com:mibe
 #
-# Copyright (c) 2013 Joyent Inc., All rights reserved.
+# Copyright (c) 2014 Joyent Inc., All rights reserved.
 
 set -o errexit
 set -o pipefail
@@ -15,9 +15,9 @@ usage() {
 	cat <<- EOF >&2
 
 	build_lx - version ${mi_version}
-	Image builder for lx-brand images based on debian
+	Image builder for lx-brand images base on centos
 
-	Usage: $0 [options] BUILD_BASE BUILD_ZONE BUILD_REPO
+	Usage: $0 [options] BUILD_REPO
 
 	Options:
 
@@ -25,17 +25,9 @@ usage() {
 
 	Arguments:
     
-	       BUILD_BASE      Build image to use for base of the image.  This image
-	                       must already exist in the ZFS hierarchy.
-	                       e.g. debian-9-20180404
-
-	       BUILD_ZONE      Build zone to use for building out the image.  The
-	                       UUID of a zone that is already installed and running.
-	                       e.g. b23882cc-3d9e-11e3-aa2f-83b8d8746936
-
 	       BUILD_REPO      Build repository to use which contains the necessary
 	                       build files for the image.
-	                       e.g. mi-mongodb
+	                       e.g. mi-lx-percona
 
 	EOF
 
@@ -44,10 +36,8 @@ usage() {
 mi_version="1.0.0";
 
 shift $(($OPTIND - 1))
-if [[ $# = 3 ]]; then
-        mi_bimage="$1";
-        mi_bzone="$2";
-        mi_brepo="$3";
+if [[ $# = 1 ]]; then
+        mi_brepo="$1";
 else
         usage;
 fi
@@ -59,7 +49,7 @@ mi_home=$(dirname $(cd ${0%/*} && pwd -P));
 trap zone_cleanup_sighandler INT TERM;
 
 printf "\nbuild_lx - version ${mi_version}\n";
-printf "Image builder for lx-brand images based on debian\n";
+printf "Image builder for lx-brand images base on centos\n";
 
 # Get repository directory and variables
 get_reposdir;
@@ -67,40 +57,32 @@ get_reposdir;
 # Sanity check everything before starting
 build_sanitycheck;
 
-# Backup the zonepath and halt the build zone
-zone_backup_zonepath;
-zone_halt;
-
 # Configure the build zone for imaging
+# This will create the vm, backup zonepath, halt,
+# configure, and boot the build zone
 zone_configure_lx_buildzone;
-
-# Boot the build zone
-zone_lx_boot;
 
 # Copy "copy" directory into build zone
 zone_copyin_files;
 
 # Create motd, product, and install packages in the build zone
 zone_create_motdproduct;
-zone_delete_lx_packages;
 zone_install_lx_packages;
 
 # Execute the customize script in the build zone
 zone_exec_customize;
 
 # Halt build zone and un-configure it
-zone_halt;
 zone_unconfigure_lx_buildzone;
 
 # Create dump of build zone
 zone_create_lx_dumpmanifest;
 
-# Clean up
-zone_cleanup;
+# Delete the build zone and filesystems
+zone_delete_vm;
 
-printf "Image:             ${mi_bfinal_dump}\n";
-printf "Manifest (IMGAPI): ${mi_bfinal_manifest_imgapi}\n";
-printf "Manifest (DSAPI):  ${mi_bfinal_manifest_dsapi}\n\n";
+printf "Image:    ${mi_bfinal_dump}\n";
+printf "Manifest: ${mi_bfinal_manifest}\n";
+printf "Manifest_dsapi: ${mi_bfinal_manifest_dsapi}\n\n";
 
 exit 0;
-

@@ -789,8 +789,23 @@ zone_lx_boot() {
 	sleep 15;
 	printf "OK.\n";
 }
+
+
 zone_configure_lx_buildzone() {
-	printf "%-70s" "* Configuring lx-build zone (${mi_bzonet}) to be imaged..";
+	printf "%-60s" "* Configuring build zone (${mi_bzonet})..";
+
+	# Create build the zone from vm.json
+	cp ${mi_home}/etc/lx-vm.json ${mi_home}/etc/lx-mibezone1.json;
+	gsed -i "s/@image_uuid@/${mi_bimage}/" ${mi_home}/etc/lx-mibezone1.json;
+	#vmadm create -f ${mi_home}/etc/vm.json &> /dev/null || failtest "Unable to create build zone ${mi_bzone}";
+	vmadm create -f ${mi_home}/etc/mibezone1.json || failtest "Unable to create build zone ${mi_bzone}";
+	rm -f ${mi_home}/etc/lx-mibezone1.json;
+
+	# Halt the build zone
+	zone_halt;
+
+	# Backup zonepath as mi-zpath attr
+	zone_backup_zonepath;
 
 	# Unmount cores filesystem zones/cores/mi_bzone from build zone mi_bzone
 	zfs unmount zones/cores/${mi_bzone} || failtest "Unable to unmount zones/cores/${mi_bzone}.";
@@ -824,8 +839,13 @@ zone_configure_lx_buildzone() {
 	cp -p ${mi_bzone_oldpath}/root/etc/resolv.conf \
 	  /${mi_bzone_tplate}/root/etc/resolv.conf 2> /dev/null || true;
 
+
+	# Boot the build zone
+	zone_lx_boot;
+
 	printf "OK.\n";
 }
+
 zone_delete_lx_packages() {
 	if [[ -f "${mi_brepo_path}/delete_packages" ]]; then
     IFS=$'\n\r';
@@ -847,13 +867,14 @@ zone_delete_lx_packages() {
 		fi
 	fi
 }
+
 zone_install_lx_packages() {
-	# First run pkgin update
+	# First run yum update
 	mi_bzone_result=$(zlogin ${mi_bzone} 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-             apt-get -qq update 2>&1' >> ${mi_bzone_logall} \
+            yum -y update 2>&1' >> ${mi_bzone_logall} \
             | tee -a ${mi_bzone_logall} >> ${mi_bzone_logerr} || echo $?);
 
-	[[ ! ${mi_bzone_result} ]] || failtest "Unable to update apt list.";
+	[[ ! ${mi_bzone_result} ]] || failtest "Unable to update pkgin list.";
 
 	if [[ -f "${mi_brepo_path}/packages" ]]; then
     		IFS=$'\n\r';
@@ -862,28 +883,31 @@ zone_install_lx_packages() {
 		mi_bzone_packages=(${mi_bzone_packagesr[@]/\#*/});
 
 		if [[ ! -z "${mi_bzone_packages}" ]]; then
-			printf "%-70s" "* Installing packages list..";
+			printf "%-60s" "* Installing packages list..";
 
-			echo "apt-get -qq install ${mi_bzone_packages[@]}" >> ${mi_bzone_logall}
-
+			echo "yum -y install ${mi_bzone_packages[@]}" >> ${mi_bzone_logall}
 			mi_bzone_result=$(zlogin ${mi_bzone} \
 			  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-			  apt-get -qq install ${mi_bzone_packages[@]} 2>&1 >> ${mi_bzone_logall} \
+			  yum -y install ${mi_bzone_packages[@]} 2>&1 >> ${mi_bzone_logall} \
 			  | tee -a ${mi_bzone_logall} >> ${mi_bzone_logerr} || echo $?); 
 
 			[[ ! ${mi_bzone_result} ]] && printf "OK.\n" || failtest "There was an error installing the packages list.\n! See ${mi_bzone_logerr}.";
 		fi
 	fi
 }
+
 zone_unconfigure_lx_buildzone() {
-	printf "%-70s" "* Un-configuring build zone (${mi_bzonet})..";
+	printf "%-60s" "* Un-configuring build zone (${mi_bzonet})..";
+
+	# First halt the build zone
+	zone_halt;
 	
 	# Detach existing dataset from build zone mi_bzone
 	zoneadm -z ${mi_bzone} detach &> /dev/null || failtest "Unable to detach dataset from ${mi_bzone}.";
 
 	# Restore original network configuration to build zone mi_bzone
-	mi_bzone_vnics=($(zonecfg -z ${mi_bzone} info net 2>/dev/null | \
-	  awk '{if($1~/physical/) print $2}'));
+#	mi_bzone_vnics=($(zonecfg -z ${mi_bzone} info net 2>/dev/null | \
+#	  awk '{if($1~/physical/) print $2}'));
 
 	mv /${mi_bzone_tplate}/root/etc/resolv.conf{.orig,} 2>/dev/null || \
 	rm /${mi_bzone_tplate}/root/etc/resolv.conf 2>/dev/null || true;
@@ -892,31 +916,11 @@ zone_unconfigure_lx_buildzone() {
 	# Make sure the final snapshot doesn't contain any SUNattached.xml/SUNWdetached.xml files
 	rm -f /${mi_bzone_tplate}/SUNW{at,de}tached.xml
 	zfs snapshot ${mi_bzone_tplate}@final &> /dev/null || failtest "Unable to create snapshot ${mi_bzone_tplate}@final.";
-
-	# Re-configure build zone mi_bzone with original dataset
-	mi_bzone_oldpath=$(eval echo $(zonecfg -z ${mi_bzone} \
-	info attr name=mi-zpath 2>/dev/null | awk -F: '{if ($1~/value/) print $2}'));
-
-	zonecfg -z ${mi_bzone} "set zonepath=${mi_bzone_oldpath}" &> /dev/null
-
-	# Re-attach the original dataset to the build zone mi_bzone
-	zoneadm -z ${mi_bzone} attach -F &> /dev/null || failtest "Unable to attach original dataset to ${mi_bzone}.";
-
-	# Mount the cores filesystem back to the build zone mi_bzone
-	mi_bzone_path=$(eval echo $(zonecfg -z ${mi_bzone} info zonepath 2>/dev/null | awk -F: '{print $2}')); 
-
-	zfs mount zones/cores/${mi_bzone} &> /dev/null || true;
-
-	# Clear the mi-zpath setting from build zone mi_bzone
-	zonecfg -z ${mi_bzone} 'remove attr name=mi-zpath' 2>/dev/null || true;
-
-	# Boot mi_bzone
-	zoneadm -z ${mi_bzone} boot &> /dev/null || failtest "Unable to boot ${mi_bzone}.";
-
 	printf "OK.\n";
 }
+
 zone_create_lx_dumpmanifest() {
-	printf "%-70s" "* Creating image file and manifest..";
+	printf "%-60s" "* Creating image file and manifest..";
 
 	if [[ ${compression} == "gzip" ]]; then
 		zfs send ${mi_bzone_tplate}@final 2> /dev/null | gzip -9 > ${mi_bfinal_dump} || failtest "Unable to zfs dump ${mi_bfinal_dump}.";
