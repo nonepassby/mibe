@@ -54,6 +54,8 @@ printf "Image builder for lx-brand images base on centos\n";
 # Get repository directory and variables
 get_reposdir;
 
+temp_json="lx-vm.json"
+
 # Sanity check everything before starting
 build_sanitycheck;
 

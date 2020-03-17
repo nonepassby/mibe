@@ -228,13 +228,16 @@ get_vars() {
 	mi_imagenn="${name}";
 	mi_imagenv="${version}";
 	fi
+	if [ "${temp_json}" == "" ];then
+		temp_json="vm.json"
+	fi
 	mi_imagebn="${base%-*}";
 #	mi_imagebv="${base#*-}";
 	mi_imagebv="${base##*-}";
 #	mi_imagebd="${mi_imagenv%.*}.0";
 	mi_time=$(date +%Y-%m-%d_%H-%M-%S);
-	mi_bzone=$(json -f ${mi_home}/etc/vm.json -aH uuid);
-#	mi_bimage=$(json -f ${mi_home}/etc/vm.json -aH image_uuid);
+	mi_bzone=$(json -f ${mi_home}/etc/${temp_json} -aH uuid);
+#	mi_bimage=$(json -f ${mi_home}/etc/${temp_json} -aH image_uuid);
 	mi_bimage=$(imgadm list -Ho uuid name=${mi_imagebn} version=${mi_imagebv})
 	if [ "${mi_bimage}" == "" ]; then
 		failtest "Base image ${base} doesn't exist.";
@@ -253,13 +256,17 @@ get_vars() {
 	mi_bzone_logerr="${mi_home}/logs/${mi_imagenn}-${mi_imagenv}-${mi_time}-error.log";
 }
 build_sanitycheck() {
+    if [ "${temp_json}" == "" ];then
+        temp_json="vm.json"
+    fi 
+
 	printf "\n%-60s" "* Sanity checking build files and environment..";
 
 	# Check that the build zone mi_bzone exists
 #	[[ $(zoneadm -z ${mi_bzone} list &> /dev/null)$? -ne 0 ]] && failtest "Build zone ${mi_bzone} doesn\'t exist.";
 
-	# Check that the build zone configuration exists etc/vm.json
-	[[ -f "${mi_home}/etc/vm.json" ]] || failtest "Build zone json ${mi_home}/etc/vm.json doesn\'t exist.";
+	# Check that the build zone configuration exists etc/${temp_json}
+	[[ -f "${mi_home}/etc/${temp_json}" ]] || failtest "Build zone json ${mi_home}/etc/${temp_json} doesn\'t exist.";
 
 	# Check if build zone mi_bzone is a SmartOS zone
 #	[[ $(zoneadm -z ${mi_bzone} list -p 2> /dev/null | awk -F: '{ print $6 }') = "kvm" ]] && failtest "Build zone ${mi_bzone} must be a SmartOS zone.";
@@ -316,7 +323,7 @@ zone_backup_zonepath() {
 zone_halt() {
 	zoneadm -z ${mi_bzone} halt || failtest "Unable to halt zone ${mi_bzone}";
 #	zoneadm -z ${mi_bzone} halt &> /dev/null || failtest "Unable to halt zone ${mi_bzone}";
-
+	
 	zone_timeout="30";
 	while true; do
 		[[ ! $(pgrep -f '^zoneadmd.*'${mi_bzone}'$' &> /dev/null) ]] && break;
@@ -407,8 +414,13 @@ zone_copyin_files() {
 		done
 		printf "OK.\n";
 	fi
-	if [ "${pkgin_src}" == "" ]; then
-	  if [ "${mi_imagebv}" != "" ]; then
+	
+	IFS=${OLDIFS};
+}
+
+zone_replace_pkgsrc(){
+    if [ "${pkgin_src}" == "" ]; then
+      if [ "${mi_imagebv}" != "" ]; then
             if [ "${pkgin_basesrc}" != "" ]; then
                 b_y=${mi_imagebv%%.*}
                 if [ "${b_y}" == "$mi_imagebv" ];then
@@ -420,16 +432,15 @@ zone_copyin_files() {
                 fi
                 pkgin_src="${pkgin_basesrc}/${b_v}/x86_64/All"
             fi
-	  fi
-        fi
-        if [ "${pkgin_src}" != "" ]; then
+      fi
+    fi
+    if [ "${pkgin_src}" != "" ]; then
           printf "%-60s" "* Set pkgin url: ${pkgin_src}..";
           gsed -i "s|^http.*|${pkgin_src}|" /${mi_bzone_tplate}/root/opt/local/etc/pkgin/repositories.conf;
           printf "OK.\n";
-        fi
-	
-	IFS=${OLDIFS};
+    fi
 }
+
 zone_boot() {
 	zoneadm -z ${mi_bzone} boot &> /dev/null || failtest "Unable to boot ${mi_bzone}.";
 
@@ -507,15 +518,18 @@ zone_exec_customize() {
 		cp /${mi_brepo_path}/customize /${mi_bzone_tplate}/root/root
 		chmod +x /${mi_bzone_tplate}/root/root/customize
 
-		# remove /.zonecontrol/meatadata.sock for readonly filesystem		
-		gsed -i '/metadata\.sock/d' /${mi_bzone_tplate}/root/opt/local/bin/sm-prepare-image
-
 		mi_bzone_result=$(zlogin ${mi_bzone} 'bash -v /root/customize 2>&1' >> ${mi_bzone_logall} \
 		  | tee -a ${mi_bzone_logall} >> ${mi_bzone_logerr} || echo $?);
 
 		[[ ! ${mi_bzone_result} ]] && printf "OK.\n" || failtest "There was an error during execution of the customize file.\n! See ${mi_bzone_logerr}.";
 	fi
 }
+
+zone_remove_metadata_sock(){
+	 # remove /.zonecontrol/metadata.sock for readonly filesystem
+     gsed -i '/metadata\.sock/d' /${mi_bzone_tplate}/root/opt/local/bin/sm-prepare-image
+}
+
 zone_cleanup() {
         # Check if mi_bzone_tplate exists and remove it
         [[ $(zfs list -Ho name -t filesystem ${mi_bzone_tplate} &> /dev/null)$? -eq 0 ]] && zfs destroy -R ${mi_bzone_tplate} &> /dev/null
@@ -615,6 +629,7 @@ zone_create_dumpmanifest() {
   else
     mi_manifest_networks_block='"networks": [ {"name": "net0", "description": "public"} ]';
   fi
+
 
   # Set manifest owner_uuid to 9dce1460-0c4c-4417-ab8b-25ca478c5a78 if not set in manifest
   #[[ -z ${owneruuid} ]] && mi_manifest_owneruuid="00000000-0000-0000-0000-000000000000";
@@ -797,10 +812,8 @@ zone_configure_lx_buildzone() {
 	# Create build the zone from vm.json
 	cp ${mi_home}/etc/lx-vm.json ${mi_home}/etc/lx-mibezone1.json;
 	gsed -i "s/@image_uuid@/${mi_bimage}/" ${mi_home}/etc/lx-mibezone1.json;
-	#vmadm create -f ${mi_home}/etc/vm.json &> /dev/null || failtest "Unable to create build zone ${mi_bzone}";
-	vmadm create -f ${mi_home}/etc/mibezone1.json || failtest "Unable to create build zone ${mi_bzone}";
+	vmadm create -f ${mi_home}/etc/lx-mibezone1.json || failtest "Unable to create build zone ${mi_bzone}";
 	rm -f ${mi_home}/etc/lx-mibezone1.json;
-
 	# Halt the build zone
 	zone_halt;
 
@@ -870,11 +883,13 @@ zone_delete_lx_packages() {
 
 zone_install_lx_packages() {
 	# First run yum update
+	printf "%-60s" "* update yum list..";
 	mi_bzone_result=$(zlogin ${mi_bzone} 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
             yum -y update 2>&1' >> ${mi_bzone_logall} \
             | tee -a ${mi_bzone_logall} >> ${mi_bzone_logerr} || echo $?);
 
-	[[ ! ${mi_bzone_result} ]] || failtest "Unable to update pkgin list.";
+	[[ ! ${mi_bzone_result} ]] && printf "OK.\n" || failtest "Unable to update yum list.";
+
 
 	if [[ -f "${mi_brepo_path}/packages" ]]; then
     		IFS=$'\n\r';
@@ -922,6 +937,8 @@ zone_unconfigure_lx_buildzone() {
 zone_create_lx_dumpmanifest() {
 	printf "%-60s" "* Creating image file and manifest..";
 
+	[[ ! -d "${mi_images_path}" ]] && mkdir ${mi_images_path};
+	
 	if [[ ${compression} == "gzip" ]]; then
 		zfs send ${mi_bzone_tplate}@final 2> /dev/null | gzip -9 > ${mi_bfinal_dump} || failtest "Unable to zfs dump ${mi_bfinal_dump}.";
 	elif [[ ${compression} == "bzip2" ]]; then
@@ -950,7 +967,9 @@ zone_create_lx_dumpmanifest() {
   if [ -n "${role}" ] && [ -n "${kernel_version}" ]; then
     mi_manifest_role_block="\"tags\": { \"role\": \"${role}\", \"kernel_version\": \"${kernel_version}\" },";
   else
-    mi_manifest_role_block="\"tags\": { \"role\": \"os\", \"kernel_version\": \"4.10\" },";
+	img_tags=`imgadm get $mi_bimage | json "manifest.tags"`
+    mi_manifest_role_block="\"tags\": $img_tags,";
+    #mi_manifest_role_block="\"tags\": { \"role\": \"os\", \"kernel_version\": \"4.10\" },";
   fi
 
   # Create billing tags block for manifest if exists
@@ -982,7 +1001,7 @@ zone_create_lx_dumpmanifest() {
   mi_file_size=$(ls -l ${mi_bfinal_dump} | awk '{ print $5 }');
   mi_manifest_uuid=$(uuid);
 
-sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest_imgapi}
+sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest}
 {
   "v": "2",
   "uuid": "${mi_manifest_uuid}",
@@ -999,7 +1018,8 @@ sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest_imgapi}
     { 
       "sha1": "${mi_file_hash}",
       "size": ${mi_file_size},
-      "compression": "${compression}"
+      "compression": "${compression}",
+	  "compression": "gzip"
     }
   ],
   "description": "${description}",
@@ -1023,6 +1043,9 @@ sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest_dsapi}
   "uuid": "${mi_manifest_uuid}",
   "name": "${name}",
   "version": "${version}",
+  "state": "active",
+  "disabled": false,
+  "public": true,
   "description": "${description}",
   "os": "smartos",
   "type": "lx-dataset",
@@ -1032,9 +1055,10 @@ sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest_dsapi}
   "published_at": "${mi_file_time}",
   "files": [
     { 
-      "path": "${name}-${version}.zfs.${mi_bfinal_dump_ext}",
+      "path": "${mi_imagenn}-${mi_imagenv}.zfs.gz",
       "sha1": "${mi_file_hash}",
-      "size": ${mi_file_size}
+      "size": ${mi_file_size},
+	  "compression": "gzip"
     }
   ],
   ${mi_manifest_homepage_block}

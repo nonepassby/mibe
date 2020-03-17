@@ -64,6 +64,7 @@ zone_configure_buildzone;
 
 # Copy "copy" directory into build zone
 zone_copyin_files;
+zone_replace_pkgsrc;
 
 # Create motd, product, and install packages in the build zone
 zone_create_motdproduct;
@@ -71,6 +72,9 @@ zone_install_packages;
 
 # Execute the customize script in the build zone
 zone_exec_customize;
+
+# remove metadata.sock
+zone_remove_metadata_sock;
 
 # Halt build zone and un-configure it
 zone_unconfigure_buildzone;

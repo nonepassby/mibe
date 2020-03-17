@@ -1,0 +1,24 @@
+{
+  "uuid": "869e54d0-675d-11ea-bd16-8ba7383f2235",
+  "brand": "lx",
+  "image_uuid": "@image_uuid@",
+  "autoboot": true,
+  "alias": "lx-mibezone1",
+  "hostname": "lx-mibezone1",
+  "kernel_version": "3.10.0",
+  "resolvers": [
+    "192.168.18.3",
+    "8.8.8.8"
+  ],
+  "max_physical_memory": 2048,
+  "nics": [
+    {
+      "nic_tag": "external",
+      "ips": ["dhcp"],
+      "gateway": "192.168.18.1",
+      "primary": true
+    }
+  ],
+  "customer_metadata": {
+  }
+}
