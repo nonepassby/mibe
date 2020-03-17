@@ -1,9 +1,9 @@
 # Name of the image and version
-name="lx-test-0.1.0"
+name="@@mi_image@@-0.1.0"
 
 # Build image to use for base of the image.  This image must
 # already exist in the ZFS hierarchy.
-# base-64-x.x.x or minimal-64-x.x.x
+# image ${name}-${version}
 base="centos-7-20180323"
 
 # Organization name (implanted in motd and product)
@@ -13,10 +13,10 @@ organization="Joyent"
 brand="Instance"
 
 # Description of the image
-description="Description for image lx-test"
+description="Description for image @@mi_image@@"
 
 # Homepage specific to the image
-homepage="https://docs.joyent.com/images/smartos/lx-test"
+homepage="https://github.com/nonepassby/@@mi_image@@"
 
 # Metadata users to be created (not real users created)
 users=""

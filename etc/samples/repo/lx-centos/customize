@@ -15,5 +15,5 @@ echo "* Configuring image specific packages.";
 
 # Clean up
 echo "* Cleaning up."
-rm /root/.bash_history 2>/dev/null || true
+rm -rf /root/*
 history -c

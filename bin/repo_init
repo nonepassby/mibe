@@ -18,9 +18,9 @@ usage() {
 	Arguments:
     
         TYPE              Type of build repository to initialize.
-                          Supported types: smartos
+                          Supported types: smartos, lx-centos
         REPOSITORY        Name of build repository to initialize.
-       	                  eg: mi-percona
+       	                  eg: mi-percona, mi-lx-percona
 
 	Options:
    
@@ -47,7 +47,7 @@ else
         usage;
 fi
 
-[[ ${mi_type} != "smartos" ]] && usage;
+[[ ${mi_type} != "smartos" && ${mi_type} != "lx-centos" ]] && usage;
 
 # Set mi_home and source mi_home/lib/mibe.inc if exists
 mi_home=$(dirname $(cd ${0%/*} && pwd -P));
@@ -57,5 +57,9 @@ mi_home=$(dirname $(cd ${0%/*} && pwd -P));
 mi_image=$(echo ${mi_repo} | sed 's/mi-//g');
 get_reposdir;
 get_gitserver;
-populate_smartos;
+if [ ${mi_type} = "smartos" ];then
+        populate_smartos;
+else
+        populate_lx_centos;
+fi
 [[ ! -z ${opt_g} ]] && init_repo;

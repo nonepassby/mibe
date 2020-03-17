@@ -194,6 +194,16 @@ populate_smartos() {
 
 	echo "* Done.";
 }
+
+populate_lx_centos(){
+	echo "* Populating ${mi_reposdir}/${mi_repo} SmartOS repository with build files..";
+        [[ -d "${mi_reposdir}/${mi_repo}" ]] && fail "* ERROR - ${mi_reposdir}/${mi_repo} already exists.";
+	mkdir ${mi_reposdir}/${mi_repo} &> /dev/null || fail "* ERROR - Couldn't create directory ${mi_reposdir}/${mi_repo}.";
+	cp -r ${mi_home}/etc/samples/repo/lx-centos/* ${mi_reposdir}/${mi_repo}/;
+	gsed -i "s/@@mi_image@@/${mi_image}/g" ${mi_reposdir}/${mi_repo}/Changelog;
+	gsed -i "s/@@mi_image@@/${mi_image}/g" ${mi_reposdir}/${mi_repo}/manifest;
+	echo "* Done.";
+}
 init_repo() {
 	echo "* Initializing repository ${mi_repo} at ${mi_reposdir}/${mi_repo}..";
 	cd ${mi_reposdir}/${mi_repo} 
