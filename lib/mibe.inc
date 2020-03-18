@@ -211,7 +211,7 @@ init_repo() {
 
 	git add .
 	git commit -m "Initial commit from $0" 1> /dev/null || fail "* ERROR - Couldn't git commit files to ${mi_reposdir}/${mi_repo}.";
-	git remote add origin ${mi_gitserver}:${mi_repo} 1> /dev/null || fail "* ERROR - Couldn't git remote add origin to ${mi_gitserver}:${mi_repo}.git";
+	git remote add origin ${mi_gitserver}/${mi_repo}.git 1> /dev/null || fail "* ERROR - Couldn't git remote add origin to ${mi_gitserver}:${mi_repo}.git";
 	git push origin master 1> /dev/null || fail "* ERROR - Couldn't push files to ${mi_reposdir}/${mi_gitserver}:${mi_repo}.git";
 
 	echo "* Done.";
@@ -893,12 +893,14 @@ zone_delete_lx_packages() {
 
 zone_install_lx_packages() {
 	# First run yum update
-	printf "%-60s" "* update yum list..";
-	mi_bzone_result=$(zlogin ${mi_bzone} 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+	if [ "${skip_yum_update}" != "yes" ];then
+		printf "%-60s" "* update yum list..";
+		mi_bzone_result=$(zlogin ${mi_bzone} 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
             yum -y update 2>&1' >> ${mi_bzone_logall} \
             | tee -a ${mi_bzone_logall} >> ${mi_bzone_logerr} || echo $?);
 
-	[[ ! ${mi_bzone_result} ]] && printf "OK.\n" || failtest "Unable to update yum list.";
+		[[ ! ${mi_bzone_result} ]] && printf "OK.\n" || failtest "Unable to update yum list.";
+	fi
 
 
 	if [[ -f "${mi_brepo_path}/packages" ]]; then
@@ -1011,6 +1013,8 @@ zone_create_lx_dumpmanifest() {
   mi_file_size=$(ls -l ${mi_bfinal_dump} | awk '{ print $5 }');
   mi_manifest_uuid=$(uuid);
 
+img_min_platform=`imgadm get $mi_bimage | json "manifest.requirements.min_platform"`
+
 sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest}
 {
   "v": "2",
@@ -1040,9 +1044,7 @@ sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest}
   "requirements": {
     ${mi_manifest_minram_block}
     ${mi_manifest_networks_block},
-    "min_platform": {
-      "7.0": "20171012T005133Z"
-    },
+    "min_platform": ${img_min_platform},
     "brand": "lx"
   }
 }
@@ -1078,9 +1080,7 @@ sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest_dsapi}
   "requirements": {
     ${mi_manifest_minram_block}
     ${mi_manifest_networks_block},
-    "min_platform": {
-      "7.0": "20171012T005133Z"
-    },
+    "min_platform": ${img_min_platform},
     "brand": "lx"
   }
 }
