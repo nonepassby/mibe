@@ -1011,7 +1011,12 @@ zone_create_lx_dumpmanifest() {
   mi_file_time=$(ls -l --time-style '+%Y-%m-%dT%H:%M:%SZ' ${mi_bfinal_dump} | awk '{ print $6 }');
   mi_file_hash=$(digest -a sha1 ${mi_bfinal_dump});
   mi_file_size=$(ls -l ${mi_bfinal_dump} | awk '{ print $5 }');
-  mi_manifest_uuid=$(uuid);
+  #mi_manifest_uuid=$(uuid);
+  if [ "${manifest_uuid}" == "" ]; then
+    mi_manifest_uuid=$(uuid);
+  else
+    mi_manifest_uuid=${manifest_uuid};
+  fi
 
 img_min_platform=`imgadm get $mi_bimage | json "manifest.requirements.min_platform"`
 
