@@ -7,9 +7,6 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # Exit if any commands fail
 set -o errexit
 
-# Ensure we have updated standard packages
-echo "* Updating standard packages.";
-yum -y update
 # Configuring image specific packages
 echo "* Configuring image specific packages.";
 
