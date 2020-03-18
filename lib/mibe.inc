@@ -1025,8 +1025,8 @@ sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest}
   "v": "2",
   "uuid": "${mi_manifest_uuid}",
   "owner": "${mi_manifest_owneruuid}",
-  "name": "${name}",
-  "version": "${version}",
+  "name": "${mi_imagenn}",
+  "version": "${mi_imagenv}",
   "state": "active",
   "disabled": false,
   "public": false,
@@ -1058,8 +1058,8 @@ EOF
 sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest_dsapi}
 {
   "uuid": "${mi_manifest_uuid}",
-  "name": "${name}",
-  "version": "${version}",
+  "name": "${mi_imagenn}",
+  "version": "${mi_imagenv}",
   "state": "active",
   "disabled": false,
   "public": true,
