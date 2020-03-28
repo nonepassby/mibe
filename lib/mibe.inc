@@ -447,6 +447,7 @@ zone_replace_pkgsrc(){
     if [ "${pkgin_src}" != "" ]; then
           printf "%-60s" "* Set pkgin url: ${pkgin_src}..";
           gsed -i "s|^http.*|${pkgin_src}|" /${mi_bzone_tplate}/root/opt/local/etc/pkgin/repositories.conf;
+		  gsed -i "s|^PKG_PATH=.*|PKG_PATH=${pkgin_src}|" /${mi_bzone_tplate}/root/opt/local/etc/pkg_install.conf
           printf "OK.\n";
     fi
 }
