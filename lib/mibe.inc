@@ -350,7 +350,7 @@ zone_configure_buildzone() {
 	# Create build the zone from vm.json
 	cp ${mi_home}/etc/vm.json ${mi_home}/etc/mibezone1.json;
 	brand_name="joyent";
-	if [ ${mi_imagenn} =~ "minimal" ];then
+	if [[ "${mi_imagebn}" =~ "minimal" ]];then
 		brand_name="joyent-minimal";
 	fi
 	gsed -i "s/@image_uuid@/${mi_bimage}/" ${mi_home}/etc/mibezone1.json;
