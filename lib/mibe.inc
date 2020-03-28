@@ -442,27 +442,20 @@ zone_copyin_files() {
 	IFS=${OLDIFS};
 }
 
-zone_replace_pkgsrc(){
-    if [ "${pkgin_src}" == "" ]; then
-      if [ "${mi_imagebv}" != "" ]; then
-            if [ "${pkgin_basesrc}" != "" ]; then
-                b_y=${mi_imagebv%%.*}
-                if [ "${b_y}" == "$mi_imagebv" ];then
-                  b_v="trunk"
-                else
-                  b_q=${mi_imagebv%.*}
-                  b_q=${b_q##*.}
-                  b_v="20${b_y}Q${b_q}"
-                fi
-                pkgin_src="${pkgin_basesrc}/${b_v}/x86_64/All"
-            fi
-      fi
-    fi
-    if [ "${pkgin_src}" != "" ]; then
-          printf "%-60s" "* Set pkgin url: ${pkgin_src}..";
-          gsed -i "s|^http.*|${pkgin_src}|" /${mi_bzone_tplate}/root/opt/local/etc/pkgin/repositories.conf;
-		  gsed -i "s|^PKG_PATH=.*|PKG_PATH=${pkgin_src}|" /${mi_bzone_tplate}/root/opt/local/etc/pkg_install.conf;
+zone_replace_pkgsrc(){    
+    if [ "${pkgsrc}" != "" ]; then
+          printf "%-60s" "* Set pkgin full url: ${pkgsrc}..";
+          gsed -i "s|^http.*|${pkgsrc}|" /${mi_bzone_tplate}/root/opt/local/etc/pkgin/repositories.conf;
+		  gsed -i "s|^PKG_PATH=.*|PKG_PATH=${pkgsrc}|" /${mi_bzone_tplate}/root/opt/local/etc/pkg_install.conf;
           printf "OK.\n";
+	else
+		if [ "${pkgsrc_base}" != "" ]; then			
+			pkgsrc_base=${pkgsrc_base%*/}
+			printf "%-60s" "* Set pkgin base url: ${pkgsrc_base}..";
+        	gsed -i "s|^https://pkgsrc.joyent.com|${pkgsrc_base}|" /${mi_bzone_tplate}/root/opt/local/etc/pkgin/repositories.conf;
+            gsed -i "s|^PKG_PATH=https://pkgsrc.joyent.com|PKG_PATH=${pkgsrc_base}|" /${mi_bzone_tplate}/root/opt/local/etc/pkg_install.conf;
+			printf "OK.\n";
+		fi
     fi
 }
 
@@ -524,7 +517,7 @@ zone_install_packages() {
 		if [[ ! -z "${mi_bzone_packages}" ]]; then
 			printf "%-60s" "* Installing packages list..";
 
-			echo "pkg_add -v ${mi_bzone_packages[@]}" >> ${mi_bzone_logall}
+			echo "pkgin -y in ${mi_bzone_packages[@]}" >> ${mi_bzone_logall}
 			# pkg_add -v ${mi_bzone_packages[@]} 2>&1 >> ${mi_bzone_logall} \
 			mi_bzone_result=$(zlogin ${mi_bzone} \
 			  PATH=/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin \

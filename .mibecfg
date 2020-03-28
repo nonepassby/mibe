@@ -4,8 +4,11 @@ urn_cloud_name="smartos"
 urn_creator_name="itime"
 compression="gzip"
 provider="community"
-#pkgin_basesrc="https://pkgsrc.joyent.com/packages/SmartOS"
-pkgin_basesrc="https://pkgsrc.smartos.org.cn:4443/packages/SmartOS"
+# only used when pkgsrc not set
+# pkgsrc_base="https://pkgsrc.joyent.com"
+pkgsrc_base="http://pkgsrc.itime.biz"
+# pkgsrc fullpath
+# pkgsrc=""
 base="base-64-lts-19.4.0"
 mi_images_path="/datastore/images/mibe"
 doc_baseurl="https://github.com/nonepassby"
