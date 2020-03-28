@@ -408,6 +408,14 @@ zone_configure_buildzone() {
 	    /${mi_bzone_tplate}/root/etc/hostname.${mi_bzone_vnic} 2> /dev/null || true;
 	done
 
+	mv /${mi_bzone_tplate}/root/opt/local/etc/pkgin/repositories.conf{,.orig} 2> /dev/null || true;
+	cp -p ${mi_bzone_oldpath}/root/opt/local/etc/pkgin/repositories.conf \
+	  /${mi_bzone_tplate}/root/opt/local/etc/pkgin/repositories.conf 2> /dev/null || true;
+
+	mv /${mi_bzone_tplate}/root/opt/local/etc/pkg_install.conf{,.orig} 2> /dev/null || true;
+	cp -p ${mi_bzone_oldpath}/root/opt/local/etc/pkg_install.conf \
+	  /${mi_bzone_tplate}/root/opt/local/etc/pkg_install.conf 2> /dev/null || true;
+
 	# Boot the build zone
 	zone_boot;
 
@@ -453,7 +461,7 @@ zone_replace_pkgsrc(){
     if [ "${pkgin_src}" != "" ]; then
           printf "%-60s" "* Set pkgin url: ${pkgin_src}..";
           gsed -i "s|^http.*|${pkgin_src}|" /${mi_bzone_tplate}/root/opt/local/etc/pkgin/repositories.conf;
-		  gsed -i "s|^PKG_PATH=.*|PKG_PATH=${pkgin_src}|" /${mi_bzone_tplate}/root/opt/local/etc/pkg_install.conf
+		  gsed -i "s|^PKG_PATH=.*|PKG_PATH=${pkgin_src}|" /${mi_bzone_tplate}/root/opt/local/etc/pkg_install.conf;
           printf "OK.\n";
     fi
 }
@@ -766,6 +774,8 @@ zone_unconfigure_buildzone() {
 #	  awk '{if($1~/physical/) print $2}'));
 
 	mv /${mi_bzone_tplate}/root/etc/resolv.conf{.orig,} 2>/dev/null || true;
+	mv /${mi_bzone_tplate}/root/opt/local/etc/pkgin/repositories.conf{.orig,} 2>/dev/null || true;
+	mv /${mi_bzone_tplate}/root/opt/local/etc/pkg_install.conf{.orig,} 2>/dev/null || true;
 
 #	mv /${mi_bzone_tplate}/root/etc/defaultrouter{.orig,} 2>/dev/null || \
 #	rm /${mi_bzone_tplate}/root/etc/defaultrouter 2>/dev/null || true;
