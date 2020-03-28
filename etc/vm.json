@@ -1,7 +1,7 @@
 {  
   "uuid": "95dacbfa-69b5-11e4-a52c-bfcabaff8f0c",
   "autoboot": true,
-  "brand": "joyent",
+  "brand": "@brand@",
   "limit_priv": "default",  
   "image_uuid": "@image_uuid@",  
   "max_physical_memory": 512,  

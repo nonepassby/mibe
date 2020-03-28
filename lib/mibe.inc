@@ -349,7 +349,13 @@ zone_configure_buildzone() {
 
 	# Create build the zone from vm.json
 	cp ${mi_home}/etc/vm.json ${mi_home}/etc/mibezone1.json;
+	brand_name="joyent";
+	if [ ${mi_imagenn} =~ "minimal" ];then
+		brand_name="joyent-minimal";
+	fi
 	gsed -i "s/@image_uuid@/${mi_bimage}/" ${mi_home}/etc/mibezone1.json;
+	gsed -i "s/@brand@/${brand_name}/" ${mi_home}/etc/mibezone1.json;
+
 	#vmadm create -f ${mi_home}/etc/vm.json &> /dev/null || failtest "Unable to create build zone ${mi_bzone}";
 	vmadm create -f ${mi_home}/etc/mibezone1.json || failtest "Unable to create build zone ${mi_bzone}";
 	rm -f ${mi_home}/etc/mibezone1.json;
