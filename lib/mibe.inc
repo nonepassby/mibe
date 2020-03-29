@@ -475,7 +475,7 @@ zone_boot() {
 zone_create_motdproduct() {
     if [[ -f "/${mi_brepo_path}/motd" ]]; then
 		printf "%-60s" "* Creating image motd and product file..";
-                sed -e "s!%brand%!${brand}!g" \
+                gsed -e "s!%brand%!${brand}!g" \
                     -e "s!%name%!${mi_imagenn}!g" \
                     -e "s!%version%!${mi_imagenv}!g" \
                     -e "s!%homepage%!${homepage}!g" /${mi_brepo_path}/motd > /${mi_bzone_tplate}/root/etc/motd
@@ -667,7 +667,7 @@ zone_create_dumpmanifest() {
 	mi_manifest_uuid=${manifest_uuid};
   fi
 
-sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest}
+gsed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest}
 {
   "v": "2",
   "uuid": "${mi_manifest_uuid}",
@@ -704,7 +704,7 @@ sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest}
 }
 EOF
 
-sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest_dsapi}
+gsed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest_dsapi}
 {
   "uuid": "${mi_manifest_uuid}",
   "name": "${mi_imagenn}",
@@ -1030,7 +1030,7 @@ zone_create_lx_dumpmanifest() {
 
 img_min_platform=`imgadm get $mi_bimage | json "manifest.requirements.min_platform"`
 
-sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest}
+gsed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest}
 {
   "v": "2",
   "uuid": "${mi_manifest_uuid}",
@@ -1065,7 +1065,7 @@ sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest}
 }
 EOF
 
-sed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest_dsapi}
+gsed '/^[[:blank:]]*$/d' <<-EOF > ${mi_bfinal_manifest_dsapi}
 {
   "uuid": "${mi_manifest_uuid}",
   "name": "${mi_imagenn}",

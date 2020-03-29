@@ -54,7 +54,7 @@ mi_home=$(dirname $(cd ${0%/*} && pwd -P));
 [[ -s "${mi_home}/lib/mibe.inc" ]] && source ${mi_home}/lib/mibe.inc || { echo "* ERROR - ${mi_home}/lib/mibe.inc not found,
  can't continue."; exit 1; }
 
-mi_image=$(echo ${mi_repo} | sed 's/mi-//g');
+mi_image=$(echo ${mi_repo} | gsed 's/mi-//g');
 get_reposdir;
 get_gitserver;
 if [ ${mi_type} = "smartos" ];then
