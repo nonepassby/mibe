@@ -24,7 +24,7 @@ get_reposdir;
 for i in ${mi_reposlist[@]}; do
 	[[ "${i}" =~ ^# ]] && continue;
 	[[ ! -s "${mi_reposdir}/${i}/.git/config" ]] && echo "* ${i} doesn't exist, skipping." && continue;
-	echo "* Pulling ${mi_gitserver}/${i} in ${mi_reposdir}/${i}..";
-	cd ${mi_reposdir}/${i} && git pull || echo "* ERROR - Couldn't pull ${mi_gitserver}/${i}.git.";
+	echo "* set ${mi_reposdir}/${i} remote to ${mi_gitserver}/${i}..";
+	cd ${mi_reposdir}/${i} && git remote set-url  origin ${mi_gitserver}/${i}.git || echo "* ERROR - Couldn't resetorigin ${mi_gitserver}/${i}.git.";
 	cd ..
 done
